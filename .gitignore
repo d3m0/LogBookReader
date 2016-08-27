@@ -29,7 +29,6 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
-
 ### Windows ###
 # Windows image file caches
 Thumbs.db
@@ -49,3 +48,4 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+src/
