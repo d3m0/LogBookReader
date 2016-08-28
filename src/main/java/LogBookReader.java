@@ -16,8 +16,9 @@ public class LogBookReader {
         String[] content = readFile("logbook.lua");
         String[] logbookSection = readLogbookSection(content);
         Map<String, String[]> values = readProperties(logbookSection);
-        currentPlayerName = values.get("currentPlayerName")[0];
-        String[] playersSection = values.get("players");
+        currentPlayerName = values.get("\"currentPlayerName\"")[0];
+        String[] playersSection = values.get("\"players\"");
+        Map<String, String[]> playersProperties = readProperties(playersSection);
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
@@ -31,8 +32,10 @@ public class LogBookReader {
     }
 
     private static void printSection(String... content) {
+        int lineNum = 0;
         for (String line : content) {
-            System.out.println(line);
+            System.out.println(lineNum + "  " + line);
+            lineNum++;
         }
     }
 
@@ -51,12 +54,13 @@ public class LogBookReader {
     private static Map<String, String[]> readProperties(String... content) {
         int i = 0;
         Map<String, String[]> properties = new HashMap<String, String[]>();
-
+        printSection(content);
         while (i < content.length) {
             if (content[i].trim().startsWith("[")) {
                 String propertyName = getPropertyName(content[i]);
-                properties.put(propertyName, getPropertiesByPropertyName(i, propertyName, content));
-                i += properties.get(propertyName).length;
+                String[] property = getPropertiesByPropertyName(i, propertyName, content);
+                properties.put(propertyName, property);
+                i += property.length + 2;
             } else {
                 i++;
             }
@@ -66,24 +70,36 @@ public class LogBookReader {
 
     private static String[] getPropertiesByPropertyName(int i, String propertyName, String[] content) {
         List<String> newArray = new ArrayList<String>();
-        int line = 2;
 
         if (content[i].endsWith(",")) {
-            String[] parts = content[i].split("=");
-            String result = parts[1].trim().substring(1, parts[1].length() - 3);
-            newArray.add(result);
+            newArray.add(getSingleProperty(content[i]));
         } else if (content[i + 1].trim().startsWith("{")) {
-            while (!content[i].contains("end of [\"" + propertyName + "\"]")) {
-                newArray.add(content[line].trim());
-                i++;
-                line++;
-            }
+            newArray = getMultipleProperties(propertyName, content);
         }
         return newArray.toArray(new String[0]);
     }
 
+    private static List<String> getMultipleProperties(String propertyName, String[] content) {
+        List<String> newArray = new ArrayList<String>();
+        int finishLine = content.length - 1;
+        while (!content[finishLine].trim().startsWith("}, -- end of [" + propertyName + "]")) {
+            finishLine--;
+        }
+
+        for (int line = 2; line < finishLine; line++) {
+            System.out.println(content[line]);
+            newArray.add(content[line]);
+        }
+        return newArray;
+    }
+
+    private static String getSingleProperty(String s) {
+        String[] parts = s.split("=");
+        return parts[1].trim().substring(0, parts[1].length() - 2);
+    }
+
     private static String getPropertyName(String line) {
-        return line.substring(line.indexOf("[") + 2, line.indexOf("]") - 1);
+        return line.substring(line.indexOf("[") + 1, line.indexOf("]"));
     }
 
 }
