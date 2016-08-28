@@ -19,6 +19,9 @@ public class LogBookReader {
         currentPlayerName = values.get("\"currentPlayerName\"")[0];
         String[] playersSection = values.get("\"players\"");
         Map<String, String[]> playersProperties = readProperties(playersSection);
+        String[] playerSection = playersProperties.get("1");
+        printSection(playerSection);
+        Map<String, String[]> playerProperties = readProperties(playerSection);
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
@@ -54,13 +57,17 @@ public class LogBookReader {
     private static Map<String, String[]> readProperties(String... content) {
         int i = 0;
         Map<String, String[]> properties = new HashMap<String, String[]>();
-        printSection(content);
         while (i < content.length) {
+            System.out.println(content[i]);
             if (content[i].trim().startsWith("[")) {
                 String propertyName = getPropertyName(content[i]);
                 String[] property = getPropertiesByPropertyName(i, propertyName, content);
                 properties.put(propertyName, property);
-                i += property.length + 2;
+                if (property.length > 1) {
+                    i += property.length + 2;
+                } else {
+                    i++;
+                }
             } else {
                 i++;
             }
@@ -87,7 +94,6 @@ public class LogBookReader {
         }
 
         for (int line = 2; line < finishLine; line++) {
-            System.out.println(content[line]);
             newArray.add(content[line]);
         }
         return newArray;
