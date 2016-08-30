@@ -14,14 +14,27 @@ public class LogBookReader {
 
     public static void main(String... args) throws IOException {
         String[] content = readFile("logbook.lua");
-        String[] logbookSection = readLogbookSection(content);
-        Map<String, String[]> values = readProperties(logbookSection);
-        currentPlayerName = values.get("\"currentPlayerName\"")[0];
-        String[] playersSection = values.get("\"players\"");
-        Map<String, String[]> playersProperties = readProperties(playersSection);
-        String[] playerSection = playersProperties.get("1");
-        printSection(playerSection);
-        Map<String, String[]> playerProperties = readProperties(playerSection);
+        readAllSections(content);
+
+
+//        String[] logbookSection = readLogbookSection(content);
+//        Map<String, String[]> values = readProperties(logbookSection);
+//        currentPlayerName = values.get("\"currentPlayerName\"")[0];
+//        String[] playersSection = values.get("\"players\"");
+//        Map<String, String[]> playersProperties = readProperties(playersSection);
+//        String[] playerSection = playersProperties.get("1");
+//        printSection(playerSection);
+//        Map<String, String[]> playerProperties = readProperties(playerSection);
+    }
+
+    private static void readAllSections(String[] content) {
+        Map<String, Integer> section = new HashMap<String, Integer>();
+
+        for (int i = 0; i < content.length; i++) {
+            if (content[i].trim().equals("{")) {
+
+            }
+        }
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
