@@ -14,10 +14,10 @@ public class LogBookReader {
 
     public static void main(String... args) throws IOException {
         String[] content = readFile("logbook.lua");
-        readAllSections(content);
+        String[] logbookSection = readLogbookSection(content);
+        readAllSections(logbookSection);
 
 
-//        String[] logbookSection = readLogbookSection(content);
 //        Map<String, String[]> values = readProperties(logbookSection);
 //        currentPlayerName = values.get("\"currentPlayerName\"")[0];
 //        String[] playersSection = values.get("\"players\"");
@@ -28,13 +28,21 @@ public class LogBookReader {
     }
 
     private static void readAllSections(String[] content) {
-        Map<String, Integer> section = new HashMap<String, Integer>();
+        Map<Integer, String> section = new LinkedHashMap<Integer, String>();
 
         for (int i = 0; i < content.length; i++) {
             if (content[i].trim().equals("{")) {
-
+                String propertyName = getPropertyName(content[i - 1]);
+                section.put(i, propertyName);
             }
         }
+
+        // Trace of all opening braces
+        for (Integer lineNum : section.keySet()) {
+            System.out.println(lineNum + " " + section.get(lineNum));
+        }
+
+
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
