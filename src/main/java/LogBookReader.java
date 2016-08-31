@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Created by d3m0 on 27.08.2016.
@@ -28,19 +29,28 @@ public class LogBookReader {
     }
 
     private static void readAllSections(String[] content) {
-        Map<Integer, String> section = new LinkedHashMap<Integer, String>();
+//        Map<Integer, String> section = new LinkedHashMap<Integer, String>();
+        List<Player> players = new ArrayList<Player>();
+        Pattern sectionHeaderPattern = Pattern.compile("\\[\"\\w+\"\\]");
 
         for (int i = 0; i < content.length; i++) {
-            if (content[i].trim().equals("{")) {
+            System.out.println("Line " + content[i] + " " + sectionHeaderPattern.matcher(content[i]).find());
+            if (content[i].trim().equals("[\"")) {
                 String propertyName = getPropertyName(content[i - 1]);
-                section.put(i, propertyName);
+                if (propertyName.equals("players")) {
+                    System.out.println("Reading players section");
+                    if (content[i].trim().equals("[")) {
+
+                    }
+                }
+//                section.put(i, propertyName);
             }
         }
 
         // Trace of all opening braces
-        for (Integer lineNum : section.keySet()) {
-            System.out.println(lineNum + " " + section.get(lineNum));
-        }
+//        for (Integer lineNum : section.keySet()) {
+//            System.out.println(lineNum + " " + section.get(lineNum));
+//        }
 
 
     }
@@ -126,7 +136,7 @@ public class LogBookReader {
     }
 
     private static String getPropertyName(String line) {
-        return line.substring(line.indexOf("[") + 1, line.indexOf("]"));
+        return line.substring(line.indexOf("[\"") + 1, line.indexOf("\"]"));
     }
 
 }
