@@ -1,9 +1,11 @@
+import Entities.Award;
 import Entities.Player;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -17,42 +19,109 @@ public class LogBookReader {
         String[] content = readFile("logbook.lua");
         String[] logbookSection = readLogbookSection(content);
         readAllSections(logbookSection);
-
-
-//        Map<String, String[]> values = readProperties(logbookSection);
-//        currentPlayerName = values.get("\"currentPlayerName\"")[0];
-//        String[] playersSection = values.get("\"players\"");
-//        Map<String, String[]> playersProperties = readProperties(playersSection);
-//        String[] playerSection = playersProperties.get("1");
-//        printSection(playerSection);
-//        Map<String, String[]> playerProperties = readProperties(playerSection);
     }
 
     private static void readAllSections(String[] content) {
-//        Map<Integer, String> section = new LinkedHashMap<Integer, String>();
+        LinkedList<String> sections = new LinkedList<String>();
         List<Player> players = new ArrayList<Player>();
-        Pattern sectionHeaderPattern = Pattern.compile("\\[\"\\w+\"\\]");
+        Player player = null;
+        Award award = null;
+        String currentSectionHeader = null;
+        Integer currentSectionEntityNumber = null;
+        List<Award> awards = new ArrayList<Award>();
+        HashMap<Integer, List<Award>> awardsList = new HashMap<Integer, List<Award>>();
 
         for (int i = 0; i < content.length; i++) {
-            System.out.println("Line " + content[i] + " " + sectionHeaderPattern.matcher(content[i]).find());
-            if (content[i].trim().equals("[\"")) {
-                String propertyName = getPropertyName(content[i - 1]);
-                if (propertyName.equals("players")) {
-                    System.out.println("Reading players section");
-                    if (content[i].trim().equals("[")) {
+            String line = content[i];
 
+            if (isSectionHeader(line)) {
+                String sectionHeaderName = getSectionHeaderName(line);
+                System.out.println("Section ['" + sectionHeaderName + "']");
+                sections.add(sectionHeaderName);
+                currentSectionHeader = sectionHeaderName;
+            }
+
+            if (isSectionEntity(line)) {
+                Integer sectionEntityNumber = getSectionEntityNumber(line);
+                System.out.println("Current Section Header: " + currentSectionHeader);
+                System.out.println("Current Section Entity Number: " + sectionEntityNumber);
+
+                if ("players".equals(currentSectionHeader)) {
+                    player = new Player();
+                }
+
+                if ("awards".equals(currentSectionHeader)) {
+                    currentSectionEntityNumber = sectionEntityNumber;
+                }
+            }
+
+            if (isSectionVariable(line)) {
+                String sectionVariableName = getSectionVariableName(line);
+                String sectionVariableValue = getSectionVariableValue(line);
+                System.out.println("Section variable name: " + sectionVariableName + " = " + sectionVariableValue);
+                if ("players".equals(currentSectionHeader)) {
+                    if ("invulnerable".equals(sectionVariableName)) {
+                        player.setInvulnerability(Boolean.valueOf(sectionVariableValue));
                     }
                 }
-//                section.put(i, propertyName);
+
+                if ("awards".equals(currentSectionHeader)) {
+                    award = new Award();
+                    award.setAwardName(sectionVariableValue);
+                    awards.add(award);
+                }
+            }
+
+            if (isSectionEntityEnd(line)) {
+                System.out.println("End of section: " + line);
             }
         }
 
-        // Trace of all opening braces
-//        for (Integer lineNum : section.keySet()) {
-//            System.out.println(lineNum + " " + section.get(lineNum));
-//        }
+        System.out.println(awards);
+        System.out.println(player);
+    }
 
+    private static boolean isSectionEntityEnd(String line) {
+        return  line.startsWith("}, -- end of [");
+    }
 
+    private static Integer getSectionEntityNumber(String line) {
+        Pattern propertyNamePattern = Pattern.compile("\\[(\\d+)\\].");
+        Matcher m = propertyNamePattern.matcher(line);
+        String result = null;
+        while (m.find()) {
+            result = m.group(1);
+        }
+
+        return Integer.valueOf(result);
+    }
+
+    private static String getSectionVariableValue(String line) {
+        String[] parts = line.split("=");
+        return parts[1].trim().substring(0, parts[1].length() - 2);
+    }
+
+    private static String getSectionVariableName(String line) {
+        Pattern propertyNamePattern = Pattern.compile("\\[\"?(\\w+|\\d+)\"?\\].");
+        Matcher m = propertyNamePattern.matcher(line);
+        String result = null;
+        while (m.find()) {
+            result = m.group(1);
+        }
+
+        return result;
+    }
+
+    private static boolean isSectionVariable(String line) {
+        return Pattern.compile("\\[\"?\\w+\"?\\]").matcher(line).find() && line.endsWith(",");
+    }
+
+    private static boolean isSectionEntity(String line) {
+        return (!line.startsWith("},") && Pattern.compile("\\[\\d\\]").matcher(line).find() && !line.endsWith(","));
+    }
+
+    private static boolean isSectionHeader(String line) {
+        return (!line.startsWith("],") && Pattern.compile("\\[\"\\w+\"\\]").matcher(line).find() && !line.endsWith(","));
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
@@ -91,7 +160,7 @@ public class LogBookReader {
         while (i < content.length) {
             System.out.println(content[i]);
             if (content[i].trim().startsWith("[")) {
-                String propertyName = getPropertyName(content[i]);
+                String propertyName = getSectionHeaderName(content[i]);
                 String[] property = getPropertiesByPropertyName(i, propertyName, content);
                 properties.put(propertyName, property);
                 if (property.length > 1) {
@@ -135,8 +204,15 @@ public class LogBookReader {
         return parts[1].trim().substring(0, parts[1].length() - 2);
     }
 
-    private static String getPropertyName(String line) {
-        return line.substring(line.indexOf("[\"") + 1, line.indexOf("\"]"));
+    private static String getSectionHeaderName(String line) {
+        Pattern propertyNamePattern = Pattern.compile("\\[\"(\\w+)\"\\].");
+        Matcher m = propertyNamePattern.matcher(line);
+        String result = null;
+        while (m.find()) {
+            result = m.group(1);
+        }
+
+        return result;
     }
 
 }
