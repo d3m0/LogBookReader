@@ -28,8 +28,7 @@ public class LogBookReader {
         Award award = null;
         String currentSectionHeader = null;
         Integer currentSectionEntityNumber = null;
-        List<Award> awards = new ArrayList<Award>();
-        HashMap<Integer, List<Award>> awardsList = new HashMap<Integer, List<Award>>();
+        HashMap<Integer, List<Award>> awards = new HashMap<Integer, List<Award>>();
 
         for (int i = 0; i < content.length; i++) {
             String line = content[i];
@@ -52,6 +51,16 @@ public class LogBookReader {
 
                 if ("awards".equals(currentSectionHeader)) {
                     currentSectionEntityNumber = sectionEntityNumber;
+
+                    if (awards.keySet().contains(currentSectionEntityNumber)) {
+                        System.out.println("Using existing awardList");
+                    } else {
+                        awards.put(currentSectionEntityNumber, new ArrayList<Award>());
+                    }
+
+                    for (int j : awards.keySet()) {
+                        System.out.println("Keys stored: " + j);
+                    }
                 }
             }
 
@@ -68,12 +77,17 @@ public class LogBookReader {
                 if ("awards".equals(currentSectionHeader)) {
                     award = new Award();
                     award.setAwardName(sectionVariableValue);
-                    awards.add(award);
+
+                    if (awards.keySet().contains(currentSectionEntityNumber)) {
+                        awards.get(currentSectionEntityNumber).add(award);
+                    }
                 }
             }
 
             if (isSectionEntityEnd(line)) {
-                System.out.println("End of section: " + line);
+                String sectionEntityEndMessage = getSectionEntityEndMessage(line);
+                System.out.println("End of ['" + sectionEntityEndMessage + "']");
+
             }
         }
 
@@ -81,8 +95,19 @@ public class LogBookReader {
         System.out.println(player);
     }
 
+    private static String getSectionEntityEndMessage(String line) {
+        Pattern propertyNamePattern = Pattern.compile(".*\\bend of\\b \\[\"?(\\w+|\\d+)\"?\\]");
+        Matcher m = propertyNamePattern.matcher(line);
+        String result = null;
+        while (m.find()) {
+            result = m.group(1);
+        }
+
+        return result;
+    }
+
     private static boolean isSectionEntityEnd(String line) {
-        return  line.startsWith("}, -- end of [");
+        return line.startsWith("}, -- end of [");
     }
 
     private static Integer getSectionEntityNumber(String line) {
@@ -121,7 +146,7 @@ public class LogBookReader {
     }
 
     private static boolean isSectionHeader(String line) {
-        return (!line.startsWith("],") && Pattern.compile("\\[\"\\w+\"\\]").matcher(line).find() && !line.endsWith(","));
+        return (!line.startsWith("},") && Pattern.compile("\\[\"\\w+\"\\]").matcher(line).find() && !line.endsWith(","));
     }
 
     private static String[] readFile(String path) throws FileNotFoundException {
